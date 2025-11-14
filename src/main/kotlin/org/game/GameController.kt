@@ -1,5 +1,11 @@
 package org.game
 
+import org.lwjgl.glfw.GLFW.glfwPollEvents
+import org.lwjgl.glfw.GLFW.glfwSwapBuffers
+import org.lwjgl.glfw.GLFW.glfwWindowShouldClose
+import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
+import org.lwjgl.opengl.GL11.glClear
+
 class GameController(private val window: Long) {
     private val paddle = Paddle(PaddleShader())
     private val ball = Ball(BallShader())

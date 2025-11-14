@@ -1,5 +1,11 @@
 package org.game
 
+import org.lwjgl.opengl.GL11.GL_TRIANGLE_FAN
+import org.lwjgl.opengl.GL11.glDrawArrays
+import org.lwjgl.opengl.GL15.glDeleteBuffers
+import org.lwjgl.opengl.GL30.glBindVertexArray
+import org.lwjgl.opengl.GL30.glDeleteVertexArrays
+
 class Paddle(private val shader: ShaderProgram) {
     private val vao: Int = 0
     private val vbo: Int = 0
