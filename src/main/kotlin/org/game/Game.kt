@@ -30,7 +30,7 @@ class Game {
     fun start() {
         initWindow()
         initOpenGL()
-        val controller = GameController(window)
+        val controller = GameController(window, width, height);
         controller.execute()
         cleanup()
     }

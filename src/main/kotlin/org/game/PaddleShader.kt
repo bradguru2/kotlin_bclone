@@ -1,21 +1,6 @@
 package org.game
 
 class PaddleShader : ShaderProgram(
-    vertexSource = """
-        #version 330 core
-        layout(location = 0) in vec2 aPos;
-        uniform vec3 objectPos;
-        uniform mat4 projection;
-        void main() {
-            gl_Position = projection * vec4(aPos + objectPos.xy, objectPos.z, 1.0);
-        }
-    """.trimIndent(),
-    fragmentSource = """
-        #version 330 core
-        out vec4 FragColor;
-        uniform vec3 objectColor;
-        void main() {
-            FragColor = vec4(objectColor, 1.0);
-        }
-    """.trimIndent()
+    Constants.PADDLE_VERTEX_SHADER_PATH,
+    Constants.PADDLE_FRAGMENT_SHADER_PATH,
 )

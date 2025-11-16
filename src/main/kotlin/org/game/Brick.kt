@@ -6,7 +6,7 @@ import org.lwjgl.opengl.GL15.glDeleteBuffers
 import org.lwjgl.opengl.GL30.glBindVertexArray
 import org.lwjgl.opengl.GL30.glDeleteVertexArrays
 
-class Brick(private val shader: ShaderProgram, val x: Float, val y: Float, val width: Float = 60f, val height: Float = 20f) {
+class Brick(private val shader: BrickShader, val x: Float, val y: Float, val width: Float = 60f, val height: Float = 20f) {
     private val vao: Int = 0
     private val vbo: Int = 0
 
