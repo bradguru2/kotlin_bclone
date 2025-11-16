@@ -1,6 +1,6 @@
 package org.game
 
-class BallShader : ShaderProgram(
+class BrickShader : ShaderProgram(
     Constants.BALL_VERTEX_SHADER_PATH,
     Constants.BALL_FRAGMENT_SHADER_PATH,
 )

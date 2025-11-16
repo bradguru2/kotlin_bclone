@@ -15,7 +15,7 @@ import org.lwjgl.opengl.GL30.glBindVertexArray
 import org.lwjgl.opengl.GL30.glDeleteVertexArrays
 import org.lwjgl.opengl.GL30.glGenVertexArrays
 
-class Ball(private val shader: ShaderProgram, val radius: Float = 10f, val segments: Int = 36) {
+class Ball(val shader: BallShader, radius: Float = 10f, val segments: Int = 36) {
     var x = 400f
     var y = 300f
     var vx = 200f
