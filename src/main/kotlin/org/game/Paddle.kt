@@ -40,8 +40,6 @@ class Paddle(private val shader: PaddleShader, private var windowWidth: Int, pri
     }
 
     fun render(paddleX: Int) {
-        buildGeometry(paddleX) // Rebuild geometry to update paddle position
-
         shader.use()
         // Projection for Window Coordinates
         val proj =
@@ -57,18 +55,18 @@ class Paddle(private val shader: PaddleShader, private var windowWidth: Int, pri
         GL30.glBindVertexArray(0)
     }
 
-    private fun buildQuad(x: Float,  w: Float, h: Float): Quad {
+    private fun buildQuad(w: Float, h: Float): Quad {
         val y = Constants.PADDLE_MARGIN
         val vertices = floatArrayOf(
             // Triangle 1
-            x,       y,
-            x + w,   y,
-            x + w,   y + h,
+            0f,      0f,
+            w,       0f,
+            w,       h,
 
             // Triangle 2
-            x + w,   y + h,
-            x,       y + h,
-            x,       y,
+            w,       h,
+            0f,      h,
+            0f,      0f,
         )
 
         val vao = GL30.glGenVertexArrays()
@@ -92,7 +90,6 @@ class Paddle(private val shader: PaddleShader, private var windowWidth: Int, pri
     }
 
     private fun buildGeometry(x: Int) {
-        // The paddle is built at y=0; its position is set in the shader uniform during render
-        paddle = buildQuad(x.toFloat(), paddleWidth, paddleHeight)
+        paddle = buildQuad(paddleWidth, paddleHeight)
     }
 }
