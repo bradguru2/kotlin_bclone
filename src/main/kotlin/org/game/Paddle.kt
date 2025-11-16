@@ -40,6 +40,8 @@ class Paddle(private val shader: PaddleShader, private var windowWidth: Int, pri
     }
 
     fun render(paddleX: Int) {
+        buildGeometry(paddleX) // Rebuild geometry to update paddle position
+
         shader.use()
         // Projection for Window Coordinates
         val proj =

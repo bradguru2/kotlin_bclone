@@ -66,7 +66,7 @@ class GameController(window: Long, width:Int, height:Int) {
 
     private fun render() {
         glClear(GL_COLOR_BUFFER_BIT)
-        paddle.render(windowWidth/2)
+        paddle.render(paddleX)
         ball.render()
         bricks.forEach { it.render() }
         hud.render(score, balls)
