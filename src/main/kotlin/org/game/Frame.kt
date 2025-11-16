@@ -44,24 +44,28 @@ class Frame(
         shader.setUniformVec3("uColor", Constants.FRAME_COLOR_R, Constants.FRAME_COLOR_G, Constants.FRAME_COLOR_B)
         // Draw top
         GL30.glBindVertexArray(top.vao)
-        GL30.glDrawArrays(GL30.GL_QUADS, 0, 4)
+        GL30.glDrawArrays(GL30.GL_TRIANGLES, 0, 6)
         // Draw left
         GL30.glBindVertexArray(left.vao)
-        GL30.glDrawArrays(GL30.GL_QUADS, 0, 4)
+        GL30.glDrawArrays(GL30.GL_TRIANGLES, 0, 6)
         // Draw right
         GL30.glBindVertexArray(right.vao)
-        GL30.glDrawArrays(GL30.GL_QUADS, 0, 4)
+        GL30.glDrawArrays(GL30.GL_TRIANGLES, 0, 6)
 
         GL30.glBindVertexArray(0)
     }
 
     private fun buildQuad(x: Float, y: Float, w: Float, h: Float): Quad {
-        // Vertices for a quad (two triangles); GL_QUADS is deprecated but used for simplicity
         val vertices = floatArrayOf(
-            x, y,
-            x + w, y,
-            x + w, y + h,
-            x, y + h
+            // Triangle 1
+            x,       y,
+            x + w,   y,
+            x + w,   y + h,
+
+            // Triangle 2
+            x + w,   y + h,
+            x,       y + h,
+            x,       y,
         )
 
         val vao = GL30.glGenVertexArrays()
@@ -71,7 +75,14 @@ class Frame(
         GL30.glBufferData(GL30.GL_ARRAY_BUFFER, vertices, GL30.GL_STATIC_DRAW)
 
         GL30.glEnableVertexAttribArray(0)
-        GL30.glVertexAttribPointer(0, 2, GL30.GL_FLOAT, false, 2 * 4, 0)
+        GL30.glVertexAttribPointer(
+            0,
+            2,
+            GL30.GL_FLOAT,
+            false,
+            2 * java.lang.Float.BYTES, // sizeOf(Vertex)
+            0,
+        )
 
         GL30.glBindVertexArray(0)
         return Quad(vao, vbo, 4)

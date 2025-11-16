@@ -52,18 +52,23 @@ class Paddle(private val shader: PaddleShader, private var windowWidth: Int, pri
 
         // Draw paddle
         GL30.glBindVertexArray(paddle.vao)
-        GL30.glDrawArrays(GL30.GL_QUADS, 0, 4)
+        GL30.glDrawArrays(GL30.GL_TRIANGLES, 0, 6)
 
         GL30.glBindVertexArray(0)
     }
 
     private fun buildQuad(x: Float,  w: Float, h: Float): Quad {
-        // Vertices for a quad (two triangles); GL_QUADS is deprecated but used for simplicity
+        val y = Constants.PADDLE_MARGIN
         val vertices = floatArrayOf(
-            x, Constants.PADDLE_MARGIN,
-            x + w, Constants.PADDLE_MARGIN,
-            x + w, Constants.PADDLE_MARGIN + h,
-            x, Constants.PADDLE_MARGIN + h
+            // Triangle 1
+            x,       y,
+            x + w,   y,
+            x + w,   y + h,
+
+            // Triangle 2
+            x + w,   y + h,
+            x,       y + h,
+            x,       y,
         )
 
         val vao = GL30.glGenVertexArrays()
@@ -73,10 +78,17 @@ class Paddle(private val shader: PaddleShader, private var windowWidth: Int, pri
         GL30.glBufferData(GL30.GL_ARRAY_BUFFER, vertices, GL30.GL_STATIC_DRAW)
 
         GL30.glEnableVertexAttribArray(0)
-        GL30.glVertexAttribPointer(0, 2, GL30.GL_FLOAT, false, 2 * 4, 0)
+        GL30.glVertexAttribPointer(
+            0,
+            2,
+            GL30.GL_FLOAT,
+            false,
+            2 * java.lang.Float.BYTES , // sizeOf(Vertex)
+            0,
+        )
 
         GL30.glBindVertexArray(0)
-        return Quad(vao, vbo, 4)
+        return Quad(vao, vbo, 6)
     }
 
     private fun buildGeometry(x: Int) {
