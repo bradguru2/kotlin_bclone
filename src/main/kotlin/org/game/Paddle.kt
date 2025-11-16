@@ -11,7 +11,7 @@ class Paddle(private val shader: PaddleShader, private var windowWidth: Int, pri
     private var paddleWidth = windowWidth * Constants.NORMAL_PADDLE_RATIO
 
     init {
-        buildGeometry((windowWidth - paddleWidth.toInt()) / 2) // Initial paddle position at roughly center
+        buildGeometry() // Initial paddle position at roughly center
     }
 
     fun cleanup() {
@@ -28,7 +28,7 @@ class Paddle(private val shader: PaddleShader, private var windowWidth: Int, pri
 
     fun onUpdatePaddleSize(x: Int, s: Float) {
         paddleWidth = windowWidth * s
-        buildGeometry(x)
+        buildGeometry()
     }
 
     fun updateWindowSize(w: Int, h: Int, x:Int, s: Float) {
@@ -36,7 +36,7 @@ class Paddle(private val shader: PaddleShader, private var windowWidth: Int, pri
         windowHeight = h
         paddleHeight = windowHeight * Constants.PADDLE_HEIGHT_RATIO
         paddleWidth = windowWidth * s
-        buildGeometry(x)
+        buildGeometry()
     }
 
     fun render(paddleX: Int) {
@@ -89,7 +89,7 @@ class Paddle(private val shader: PaddleShader, private var windowWidth: Int, pri
         return Quad(vao, vbo, 6)
     }
 
-    private fun buildGeometry(x: Int) {
+    private fun buildGeometry() {
         paddle = buildQuad(paddleWidth, paddleHeight)
     }
 }
