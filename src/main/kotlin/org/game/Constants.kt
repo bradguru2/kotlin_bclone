@@ -27,6 +27,18 @@ object Constants {
     const val PADDLE_HEIGHT_RATIO = 0.03f     // 2% of window height
     const val PADDLE_MARGIN = 10f              // Margin from bottom of window in pixels
 
+    // Frame Size Rations
+    const val TOP_FRAME_RATIO = 0.025f // 2.5 % of window height
+    const val SIDE_FRAME_RATIO = 0.05f // 5 % of window width
+
+    // Brick Size Ratio
+    const val BRICK_HEIGHT_RATIO = PADDLE_HEIGHT_RATIO
+    const val BRICK_WIDTH_RATIO = 2 * SIDE_FRAME_RATIO // A brick is twice as wide as a side-frame
+    const val BRICK_MARGIN_RATIO = 0.15f // In local space
+    const val BRICK_COLUMN_COUNT = 9 // 9 * 0.10 = 0.90 = 1 - 2 * 0.05
+    const val BRICK_ROW_COUNT = 8 // Standard break number of rows
+    const val BRICK_START_RATIO = 0.55f
+
     // Shader Resource Paths
     const val HUD_VERTEX_SHADER_PATH = "/shaders/hud_vertex.glsl"
     const val HUD_FRAGMENT_SHADER_PATH = "/shaders/hud_fragment.glsl"
@@ -36,4 +48,6 @@ object Constants {
     const val PADDLE_FRAGMENT_SHADER_PATH = "/shaders/paddle_fragment.glsl"
     const val BALL_VERTEX_SHADER_PATH = "/shaders/ball_vertex.glsl"
     const val BALL_FRAGMENT_SHADER_PATH = "/shaders/ball_fragment.glsl"
+    const val BRICK_VERTEX_SHADER_PATH = "/shaders/brick_vertex.glsl"
+    const val BRICK_FRAGMENT_SHADER_PATH = "/shaders/brick_fragment.glsl"
 }

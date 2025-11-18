@@ -2,8 +2,9 @@ package org.game
 
 import org.joml.Matrix4f
 import org.lwjgl.opengl.GL30
+import kotlin.math.roundToInt
 
-class Frame(
+class FrameRenderer(
     private val shader: FrameShader,
     private var windowWidth: Int,
     private var windowHeight: Int,
@@ -28,6 +29,7 @@ class Frame(
     }
 
     fun updateWindowSize(w: Int, h: Int) {
+        shader.rebuild()
         windowWidth = w
         windowHeight = h
         hudHeight = windowHeight * Constants.HUD_HEIGHT_RATIO
@@ -89,11 +91,11 @@ class Frame(
     }
 
     private fun buildGeometry() {
-        val topHeight = windowHeight * 0.025f
-        val sideWidth = windowWidth * 0.05f
+        val topHeight = (windowHeight * Constants.TOP_FRAME_RATIO).roundToInt()
+        val sideWidth = (windowWidth * Constants.SIDE_FRAME_RATIO).roundToInt()
 
-        top = buildQuad(0f, windowHeight - hudHeight - topHeight, windowWidth.toFloat(), topHeight)
-        left = buildQuad(0f, 0f, sideWidth, windowHeight - hudHeight - topHeight)
-        right = buildQuad(windowWidth - sideWidth, 0f, sideWidth, windowHeight - hudHeight - topHeight)
+        top = buildQuad(0f, windowHeight - hudHeight - topHeight, windowWidth.toFloat(), topHeight + 0.0f)
+        left = buildQuad(0f, 0f, sideWidth + 0.0f, windowHeight - hudHeight - topHeight)
+        right = buildQuad(windowWidth - sideWidth + 0.0f, 0f, sideWidth + 0.0f, windowHeight - hudHeight - topHeight)
     }
 }

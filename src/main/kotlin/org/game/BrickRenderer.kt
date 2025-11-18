@@ -2,61 +2,56 @@ package org.game
 
 import org.joml.Matrix4f
 import org.lwjgl.opengl.GL30
+import kotlin.math.roundToInt
 
-class Paddle(private val shader: PaddleShader, private var windowWidth: Int, private var windowHeight: Int) {
+class BrickRenderer(private val shader: BrickShader, private var windowWidth: Int, private var windowHeight:Int) {
     private data class Quad(val vao: Int, val vbo: Int, var vertexCount: Int)
-    private lateinit var paddle: Quad
+    private lateinit var brick: Quad
 
-    private var paddleHeight = windowHeight * Constants.PADDLE_HEIGHT_RATIO
-    private var paddleWidth = windowWidth * Constants.NORMAL_PADDLE_RATIO
+    private var brickHeight = (windowHeight * Constants.PADDLE_HEIGHT_RATIO).roundToInt()
+    private var brickWidth = (windowWidth * Constants.BRICK_WIDTH_RATIO).roundToInt()
 
     init {
         buildGeometry() // Initial paddle position at roughly center
     }
 
     fun cleanup() {
-        listOf(paddle).forEach { quad ->
+        listOf(brick).forEach { quad ->
             GL30.glDeleteVertexArrays(quad.vao)
             GL30.glDeleteBuffers(quad.vbo)
         }
         shader.cleanup()
     }
 
-    fun paddleSize(): Float {
-        return paddleWidth
-    }
-
-    fun onUpdatePaddleSize(x: Int, s: Float) {
-        paddleWidth = windowWidth * s
-        buildGeometry()
-    }
-
-    fun updateWindowSize(w: Int, h: Int, x:Int, s: Float) {
+    fun updateWindowSize(w: Int, h: Int) {
+        shader.rebuild()
         windowWidth = w
         windowHeight = h
-        paddleHeight = windowHeight * Constants.PADDLE_HEIGHT_RATIO
-        paddleWidth = windowWidth * s
+        brickHeight = (h * Constants.PADDLE_HEIGHT_RATIO).roundToInt()
+        brickWidth = (w * Constants.BRICK_WIDTH_RATIO).roundToInt()
         buildGeometry()
     }
 
-    fun render(paddleX: Int) {
+    fun render(brickX: Int, brickY: Int, rgbColor: Triple<Float, Float, Float>) {
         shader.use()
+
         // Projection for Window Coordinates
         val proj =
             Matrix4f().ortho2D(0f, windowWidth.toFloat(), 0f, windowHeight.toFloat()).get(FloatArray(16))
-        shader.setUniformVec2("uPaddlePos", paddleX.toFloat(), 0.0f) // Y flipped
+        shader.setUniformVec2("uBrickPos", brickX.toFloat(), brickY.toFloat()) // Y flipped
         shader.setUniformMat4("uProjection", proj)
-        shader.setUniformVec3("uColor", Constants.PADDLE_COLOR_R, Constants.PADDLE_COLOR_G, Constants.PADDLE_COLOR_B)
+        shader.setUniformVec3("uColor", rgbColor.first, rgbColor.second, rgbColor.third)
+        shader.setUniformVec2("uSize", brickWidth.toFloat(), brickHeight.toFloat())
+        shader.setUniformFloat("bottomMargin", Constants.BRICK_MARGIN_RATIO)
 
         // Draw paddle
-        GL30.glBindVertexArray(paddle.vao)
+        GL30.glBindVertexArray(brick.vao)
         GL30.glDrawArrays(GL30.GL_TRIANGLES, 0, 6)
 
         GL30.glBindVertexArray(0)
     }
 
     private fun buildQuad(w: Float, h: Float): Quad {
-        val y = Constants.PADDLE_MARGIN
         val vertices = floatArrayOf(
             // Triangle 1
             0f,      0f,
@@ -90,6 +85,6 @@ class Paddle(private val shader: PaddleShader, private var windowWidth: Int, pri
     }
 
     private fun buildGeometry() {
-        paddle = buildQuad(paddleWidth, paddleHeight)
+        brick = buildQuad(brickWidth + 0.0f, brickHeight + 0.0f)
     }
 }
