@@ -30,7 +30,7 @@ class GameController(window: Long, width:Int, height:Int) {
     )
 
     private var paddleRenderer = PaddleRenderer(PaddleShader(), width, height)
-    private val ballRenderer = BallRenderer(BallShader())
+    private val ballRenderer = BallRenderer(BallShader(), width, height)
     private val bricks = mutableListOf<Brick>() // assign BrickShader per brick
     private val soundManager = SoundManager()
     private var hudRenderer = HudRenderer(RetroFont(), HudShader(), width, height)
@@ -50,6 +50,8 @@ class GameController(window: Long, width:Int, height:Int) {
     private var brickWidth = (windowWidth * Constants.BRICK_WIDTH_RATIO).roundToInt()
     private var frameWidth = (windowWidth * Constants.SIDE_FRAME_RATIO).roundToInt()
     private var brickHeight = (windowHeight * Constants.BRICK_HEIGHT_RATIO).roundToInt()
+    private var ballX = 0
+    private var ballY = 0
 
     fun execute() {
         while (!glfwWindowShouldClose(gameWindow) && !gameOver) {
@@ -85,7 +87,11 @@ class GameController(window: Long, width:Int, height:Int) {
             brick.brickY = (brick.brickY * scaleY).roundToInt()
         }
 
-        paddleX = (paddleX * scaleX).toInt()
+        ballRenderer.updateWindowSize(windowWidth, windowHeight)
+        ballX = (ballX * scaleX).roundToInt()
+        ballY = (ballY * scaleY).roundToInt()
+
+        paddleX = (paddleX * scaleX).roundToInt()
         hudRenderer.updateWindowSize(windowWidth, windowHeight)
         frameRenderer.updateWindowSize(windowWidth, windowHeight)
         paddleRenderer.updateWindowSize(windowWidth, windowHeight, paddleState)
@@ -94,9 +100,11 @@ class GameController(window: Long, width:Int, height:Int) {
     private fun initLevel() {
         // Create bricks, set positions, assign shaders
         brickCount = Constants.BRICK_COLUMN_COUNT * Constants.BRICK_ROW_COUNT
-        paddleX = ((windowWidth - paddleRenderer.paddleSize()) / 2).toInt()
+        paddleX = ((windowWidth - paddleRenderer.paddleSize()) / 2).roundToInt()
         if(++brickColorIndex>4) brickColorIndex = 0
         rebuildBricks() // Unnecessary but works
+        ballX = (windowWidth / 2f - (windowHeight * Constants.BALL_HEIGHT_RATIO) / 2f).roundToInt()  // center horizontally
+        ballY = (windowHeight * Constants.BALL_START_RATIO).roundToInt()
     }
 
     private fun pollInput() {
@@ -134,7 +142,7 @@ class GameController(window: Long, width:Int, height:Int) {
     private fun render() {
         glClear(GL_COLOR_BUFFER_BIT)
         paddleRenderer.render(paddleX)
-        ballRenderer.render()
+        ballRenderer.render(ballX.toFloat(), ballY.toFloat())
         bricks.forEach { it.renderer.render(it.brickX, it.brickY, it.brickColor)}
         hudRenderer.render(score, balls)
         frameRenderer.render()
