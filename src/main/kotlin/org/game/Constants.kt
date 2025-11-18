@@ -21,6 +21,10 @@ object Constants {
     const val PADDLE_COLOR_G: Float = 0.816f
     const val PADDLE_COLOR_B: Float = 0.314f
 
+    const val BALL_COLOR_R: Float = 0.0f
+    const val BALL_COLOR_G: Float = 0.25f
+    const val BALL_COLOR_B: Float = 1.00f
+
     // Paddle Size Ratios
     const val NORMAL_PADDLE_RATIO: Float = 0.15f   // 15% of window width
     const val SMALL_PADDLE_RATIO: Float = 0.10f    // 10% of window width
@@ -38,6 +42,10 @@ object Constants {
     const val BRICK_COLUMN_COUNT = 9 // 9 * 0.10 = 0.90 = 1 - 2 * 0.05
     const val BRICK_ROW_COUNT = 8 // Standard break number of rows
     const val BRICK_START_RATIO = 0.55f
+
+    // Ball Constants
+    const val BALL_START_RATIO = 0.50f
+    const val BALL_HEIGHT_RATIO = 0.03f
 
     // Shader Resource Paths
     const val HUD_VERTEX_SHADER_PATH = "/shaders/hud_vertex.glsl"

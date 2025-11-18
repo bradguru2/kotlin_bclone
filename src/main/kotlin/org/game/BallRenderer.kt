@@ -1,64 +1,78 @@
 package org.game
 
-import org.lwjgl.opengl.GL11.GL_FLOAT
-import org.lwjgl.opengl.GL11.GL_TRIANGLE_FAN
-import org.lwjgl.opengl.GL11.glDrawArrays
-import org.lwjgl.opengl.GL15.GL_ARRAY_BUFFER
-import org.lwjgl.opengl.GL15.GL_STATIC_DRAW
-import org.lwjgl.opengl.GL15.glBindBuffer
-import org.lwjgl.opengl.GL15.glBufferData
-import org.lwjgl.opengl.GL15.glDeleteBuffers
-import org.lwjgl.opengl.GL15.glGenBuffers
-import org.lwjgl.opengl.GL20.glEnableVertexAttribArray
-import org.lwjgl.opengl.GL20.glVertexAttribPointer
-import org.lwjgl.opengl.GL30.glBindVertexArray
-import org.lwjgl.opengl.GL30.glDeleteVertexArrays
-import org.lwjgl.opengl.GL30.glGenVertexArrays
+import org.joml.Matrix4f
+import org.lwjgl.opengl.GL30
+import kotlin.math.roundToInt
 
-class BallRenderer(val shader: BallShader, radius: Float = 10f, val segments: Int = 36) {
-    var x = 400f
-    var y = 300f
-    var vx = 200f
-    var vy = 200f
+class BallRenderer(
+    private val shader: BallShader,
+    private var windowWidth: Int,
+    private var windowHeight: Int
+) {
+    private data class Quad(val vao: Int, val vbo: Int)
 
-    private val vao: Int
-    private val vbo: Int
-    private val vertexCount: Int
+    private lateinit var quad: Quad
+
+    private var ballSize = (windowHeight * Constants.BALL_HEIGHT_RATIO).roundToInt()
 
     init {
-        val vertices = FloatArray((segments + 2) * 2)
-        vertices[0] = 0f
-        vertices[1] = 0f
-        for (i in 0..segments) {
-            val angle = 2.0 * Math.PI * i / segments
-            vertices[(i + 1) * 2] = (radius * Math.cos(angle)).toFloat()
-            vertices[(i + 1) * 2 + 1] = (radius * Math.sin(angle)).toFloat()
-        }
-        vertexCount = segments + 2
-
-        vao = glGenVertexArrays()
-        glBindVertexArray(vao)
-        vbo = glGenBuffers()
-        glBindBuffer(GL_ARRAY_BUFFER, vbo)
-        glBufferData(GL_ARRAY_BUFFER, vertices, GL_STATIC_DRAW)
-        glVertexAttribPointer(0, 2, GL_FLOAT, false, 2 * 4, 0)
-        glEnableVertexAttribArray(0)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glBindVertexArray(0)
-    }
-
-    fun render() {
-        shader.use()
-        shader.setUniformVec3("objectPos", x, y, 0f)
-        shader.setUniformVec3("objectColor", 1f, 1f, 0f)
-        glBindVertexArray(vao)
-        glDrawArrays(GL_TRIANGLE_FAN, 0, vertexCount)
-        glBindVertexArray(0)
+        updateWindowSize(windowWidth, windowHeight)
     }
 
     fun cleanup() {
-        glDeleteVertexArrays(vao)
-        glDeleteBuffers(vbo)
+        GL30.glDeleteVertexArrays(quad.vao)
+        GL30.glDeleteBuffers(quad.vbo)
         shader.cleanup()
+    }
+
+    fun updateWindowSize(w: Int, h: Int) {
+        shader.rebuild()
+        windowWidth = w
+        windowHeight = h
+        ballSize = (windowHeight * Constants.BALL_HEIGHT_RATIO).roundToInt()
+        buildGeometry()
+    }
+
+    private fun buildGeometry() {
+        val s = ballSize.toFloat()
+        val vertices = floatArrayOf(
+            0f, 0f,
+            s, 0f,
+            s, s,
+            s, s,
+            0f, s,
+            0f, 0f
+        )
+
+        val vao = GL30.glGenVertexArrays()
+        val vbo = GL30.glGenBuffers()
+
+        GL30.glBindVertexArray(vao)
+        GL30.glBindBuffer(GL30.GL_ARRAY_BUFFER, vbo)
+        GL30.glBufferData(GL30.GL_ARRAY_BUFFER, vertices, GL30.GL_STATIC_DRAW)
+
+        GL30.glEnableVertexAttribArray(0)
+        GL30.glVertexAttribPointer(0, 2, GL30.GL_FLOAT, false, 2 * Float.SIZE_BYTES, 0)
+
+        GL30.glBindVertexArray(0)
+
+        quad = Quad(vao, vbo)
+    }
+
+    fun render(ballX: Float, ballY: Float) {
+        shader.use()
+        val diameter = ballSize.toFloat()
+
+        val proj = Matrix4f().ortho2D(0f, windowWidth.toFloat(), 0f, windowHeight.toFloat())
+            .get(FloatArray(16))
+
+        shader.setUniformMat4("uProjection", proj)
+        shader.setUniformVec2("uBallPos", ballX, ballY)
+        shader.setUniformVec2("uBallSize", diameter, diameter)
+        shader.setUniformVec3("uColor", Constants.BALL_COLOR_R, Constants.BALL_COLOR_G, Constants.BALL_COLOR_B)
+
+        GL30.glBindVertexArray(quad.vao)
+        GL30.glDrawArrays(GL30.GL_TRIANGLES, 0, 6)
+        GL30.glBindVertexArray(0)
     }
 }
