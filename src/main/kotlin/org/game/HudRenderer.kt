@@ -5,13 +5,15 @@ import org.joml.Matrix4f
 import org.lwjgl.opengl.GL13
 
 
-class Hud(
-    private val font: RetroFont,
+class HudRenderer(
+    private var font: RetroFont,
     private val shader: HudShader,
     private var windowWidth: Int,
     private var windowHeight: Int
 ) {
     fun updateWindowSize(w: Int, h: Int) {
+        shader.rebuild()
+        font = RetroFont() // Rebuild it to be safe
         windowWidth = w
         windowHeight = h
     }

@@ -1,11 +1,16 @@
 package org.game
 
 import org.lwjgl.opengl.GL30
+import kotlin.properties.Delegates
 
-abstract class ShaderProgram(vertexSource: String, fragmentSource: String) {
-    val programId: Int
+abstract class ShaderProgram(private val vertexSource: String, private val fragmentSource: String) {
+    private var programId by Delegates.notNull<Int>()
 
     init {
+        rebuild()
+    }
+
+    fun rebuild() {
         val vertexId = compileShader(loadResourceString(vertexSource), GL30.GL_VERTEX_SHADER)
         val fragmentId = compileShader(loadResourceString(fragmentSource), GL30.GL_FRAGMENT_SHADER)
         programId = GL30.glCreateProgram()
@@ -16,8 +21,12 @@ abstract class ShaderProgram(vertexSource: String, fragmentSource: String) {
         GL30.glDeleteShader(vertexId)
         GL30.glDeleteShader(fragmentId)
     }
-
     fun use() = GL30.glUseProgram(programId)
+
+    fun setUniformFloat(name: String, newValue: Float) {
+        val location = GL30.glGetUniformLocation(programId, name)
+        GL30.glUniform1f(location, newValue)
+    }
 
     fun setUniformVec2(name: String, x: Float, y: Float) {
         val location = GL30.glGetUniformLocation(programId, name)
