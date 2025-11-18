@@ -1,5 +1,12 @@
 package org.game
 
+import org.joml.Math.clamp
+import org.lwjgl.glfw.GLFW.GLFW_KEY_A
+import org.lwjgl.glfw.GLFW.GLFW_KEY_D
+import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT
+import org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT
+import org.lwjgl.glfw.GLFW.GLFW_PRESS
+import org.lwjgl.glfw.GLFW.glfwGetKey
 import org.lwjgl.glfw.GLFW.glfwPollEvents
 import org.lwjgl.glfw.GLFW.glfwSwapBuffers
 import org.lwjgl.glfw.GLFW.glfwWindowShouldClose
@@ -52,9 +59,14 @@ class GameController(window: Long, width:Int, height:Int) {
     private var brickHeight = (windowHeight * Constants.BRICK_HEIGHT_RATIO).roundToInt()
     private var ballX = 0
     private var ballY = 0
+    private var lastTime = System.currentTimeMillis()
+    private var deltaTime = 0f
+    private var paddleSpeed = 600f  // pixels per second
+
 
     fun execute() {
         while (!glfwWindowShouldClose(gameWindow) && !gameOver) {
+            deltaTime = computeDeltaTime()
             if (isLevelEvent) {
                 level++
                 initLevel()
@@ -107,12 +119,55 @@ class GameController(window: Long, width:Int, height:Int) {
         ballY = (windowHeight * Constants.BALL_START_RATIO).roundToInt()
     }
 
-    private fun pollInput() {
-        // Keyboard input for paddle movement
+    private fun computeDeltaTime(): Float {
+        val now = System.currentTimeMillis()
+        val dt = (now - lastTime) / 1000f   // convert ms → seconds
+        lastTime = now
+        return dt
     }
 
+    private fun pollInput() {
+        // left movement
+        if (glfwGetKey(gameWindow, GLFW_KEY_LEFT) == GLFW_PRESS) {
+            paddleX -= (paddleSpeed * deltaTime).toInt()
+        }
+
+        // right movement
+        if (glfwGetKey(gameWindow, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+            paddleX += (paddleSpeed * deltaTime).toInt()
+        }
+
+        // Clamp to window boundaries
+        val paddleWidth = paddleRenderer.paddleSize().roundToInt()
+        paddleX = paddleX.coerceIn(
+            frameWidth,                           // left wall
+            windowWidth - frameWidth - paddleWidth // right wall
+        )
+    }
+
+
     private fun update() {
-        // Update ball movement, collision, score
+        var velocityX = 0f
+
+        if (glfwGetKey(gameWindow, GLFW_KEY_LEFT) == GLFW_PRESS ||
+            glfwGetKey(gameWindow, GLFW_KEY_A) == GLFW_PRESS) {
+            velocityX -= paddleSpeed
+        }
+
+        if (glfwGetKey(gameWindow, GLFW_KEY_RIGHT) == GLFW_PRESS ||
+            glfwGetKey(gameWindow, GLFW_KEY_D) == GLFW_PRESS) {
+            velocityX += paddleSpeed
+        }
+
+        paddleX = (paddleX + velocityX * deltaTime).toInt()
+
+        val paddleWidth = paddleRenderer.paddleSize().roundToInt()
+
+        paddleX = clamp(
+            paddleX,
+            frameWidth,
+            windowWidth - frameWidth - paddleWidth
+        )
     }
 
     private fun rebuildBricks() {
