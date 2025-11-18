@@ -26,11 +26,6 @@ class PaddleRenderer(private val shader: PaddleShader, private var windowWidth: 
         return paddleWidth
     }
 
-    fun onUpdatePaddleSize(x: Int, s: Float) {
-        paddleWidth = windowWidth * s
-        buildGeometry()
-    }
-
     fun updateWindowSize(w: Int, h: Int, s: Float) {
         shader.rebuild()
         windowWidth = w
