@@ -27,7 +27,7 @@ object Constants {
 
     // Paddle Size Ratios
     const val NORMAL_PADDLE_RATIO: Float = 0.15f   // 15% of window width
-    const val SMALL_PADDLE_RATIO: Float = 0.10f    // 10% of window width
+    const val SMALL_PADDLE_RATIO: Float = 0.075f    // 7.5% of window width
     const val PADDLE_HEIGHT_RATIO = 0.03f     // 2% of window height
     const val PADDLE_MARGIN = 10f              // Margin from bottom of window in pixels
 

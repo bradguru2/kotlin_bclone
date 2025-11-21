@@ -1,10 +1,10 @@
 package org.game
 
-import org.joml.Math.clamp
 import org.lwjgl.glfw.GLFW.GLFW_KEY_A
 import org.lwjgl.glfw.GLFW.GLFW_KEY_D
 import org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT
 import org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT
+import org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE
 import org.lwjgl.glfw.GLFW.GLFW_PRESS
 import org.lwjgl.glfw.GLFW.glfwGetKey
 import org.lwjgl.glfw.GLFW.glfwPollEvents
@@ -12,10 +12,12 @@ import org.lwjgl.glfw.GLFW.glfwSwapBuffers
 import org.lwjgl.glfw.GLFW.glfwWindowShouldClose
 import org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT
 import org.lwjgl.opengl.GL11.glClear
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class GameController(window: Long, width:Int, height:Int) {
-
+    // Let's react to collisions
+    data class BounceResult(val vx: Float, val vy: Float)
     // Track bricks
     data class Brick (
         var brickX: Int,
@@ -24,7 +26,6 @@ class GameController(window: Long, width:Int, height:Int) {
         var brickColor: Triple<Float, Float, Float>,
         val renderer: BrickRenderer,
     )
-
     val brickColorArray = arrayOf(
         Triple(0.75f, 0f, 0f),
         Triple(0f, 0.75f, 0f),
@@ -39,7 +40,7 @@ class GameController(window: Long, width:Int, height:Int) {
     private var paddleRenderer = PaddleRenderer(PaddleShader(), width, height)
     private val ballRenderer = BallRenderer(BallShader(), width, height)
     private val bricks = mutableListOf<Brick>() // assign BrickShader per brick
-    private val soundManager = SoundManager()
+    private val retroSynth = RetroSynth()
     private var hudRenderer = HudRenderer(RetroFont(), HudShader(), width, height)
     private var frameRenderer = FrameRenderer(FrameShader(), width, height)
     private var score = 0
@@ -50,7 +51,6 @@ class GameController(window: Long, width:Int, height:Int) {
     private var windowWidth = width
     private var windowHeight = height
     private var gameOver = false
-    private var paddleState = Constants.NORMAL_PADDLE_RATIO
     private var paddleX = windowWidth / 2
     private var brickCount = Constants.BRICK_COLUMN_COUNT * Constants.BRICK_ROW_COUNT
     private var brickColorIndex = -1
@@ -62,7 +62,13 @@ class GameController(window: Long, width:Int, height:Int) {
     private var lastTime = System.currentTimeMillis()
     private var deltaTime = 0f
     private var paddleSpeed = 600f  // pixels per second
-
+    private var isBallReleased = true
+    private var ballDX = 0f
+    private var ballDY = 0f
+    private var ballSpeedUV = 0.5f
+    private var isMoveLeft: Boolean = false
+    private var isMoveRight: Boolean = false
+    private var isSpaceKey: Boolean = false
 
     fun execute() {
         while (!glfwWindowShouldClose(gameWindow) && !gameOver) {
@@ -74,6 +80,7 @@ class GameController(window: Long, width:Int, height:Int) {
             }
             pollInput()
             update()
+            handleCollisions()
             render()
             glfwSwapBuffers(gameWindow)
             glfwPollEvents()
@@ -102,11 +109,13 @@ class GameController(window: Long, width:Int, height:Int) {
         ballRenderer.updateWindowSize(windowWidth, windowHeight)
         ballX = (ballX * scaleX).roundToInt()
         ballY = (ballY * scaleY).roundToInt()
+        ballDX *= scaleX
+        ballDY *= scaleY
 
         paddleX = (paddleX * scaleX).roundToInt()
         hudRenderer.updateWindowSize(windowWidth, windowHeight)
         frameRenderer.updateWindowSize(windowWidth, windowHeight)
-        paddleRenderer.updateWindowSize(windowWidth, windowHeight, paddleState)
+        paddleRenderer.updateWindowSize(windowWidth, windowHeight, paddleRenderer.paddleState)
     }
 
     private fun initLevel() {
@@ -115,8 +124,7 @@ class GameController(window: Long, width:Int, height:Int) {
         paddleX = ((windowWidth - paddleRenderer.paddleSize()) / 2).roundToInt()
         if(++brickColorIndex>4) brickColorIndex = 0
         rebuildBricks() // Unnecessary but works
-        ballX = (windowWidth / 2f - (windowHeight * Constants.BALL_HEIGHT_RATIO) / 2f).roundToInt()  // center horizontally
-        ballY = (windowHeight * Constants.BALL_START_RATIO).roundToInt()
+        initBall()
     }
 
     private fun computeDeltaTime(): Float {
@@ -129,23 +137,63 @@ class GameController(window: Long, width:Int, height:Int) {
     private fun pollInput() {
         // left movement
         if (glfwGetKey(gameWindow, GLFW_KEY_LEFT) == GLFW_PRESS) {
-            paddleX -= (paddleSpeed * deltaTime).toInt()
+            isMoveLeft = true
         }
 
         // right movement
         if (glfwGetKey(gameWindow, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-            paddleX += (paddleSpeed * deltaTime).toInt()
+            isMoveRight = true
         }
 
-        // Clamp to window boundaries
-        val paddleWidth = paddleRenderer.paddleSize().roundToInt()
-        paddleX = paddleX.coerceIn(
-            frameWidth,                           // left wall
-            windowWidth - frameWidth - paddleWidth // right wall
+        if (!isBallReleased && glfwGetKey(gameWindow, GLFW_KEY_SPACE) == GLFW_PRESS) {
+            isSpaceKey = true
+        }
+    }
+
+    fun aabbOverlap(
+        ax: Float, ay: Float, aw: Float, ah: Float,
+        bx: Float, by: Float, bw: Float, bh: Float
+    ): Boolean {
+        return ax < bx + bw &&
+                ax + aw > bx &&
+                ay < by + bh &&
+                ay + ah > by
+    }
+
+    fun ballHitsLeftWall(ballX: Float, frameLeftX: Float): Boolean =
+        ballX <= frameLeftX
+
+    fun ballHitsRightWall(ballX: Float, ballSize: Float, frameRightX: Float): Boolean =
+        ballX + ballSize >= frameRightX
+
+    fun ballHitsTopWall(ballY: Float, ballSize: Float, topFrameY: Float): Boolean =
+        ballY + ballSize >= topFrameY
+
+    fun ballHitsBrick(
+        ballX: Float, ballY: Float, ballSize: Float,
+        brickX: Float, brickY: Float, brickW: Float, brickH: Float
+    ): Boolean {
+        return aabbOverlap(
+            ballX, ballY, ballSize, ballSize,
+            brickX, brickY, brickW, brickH
         )
     }
 
+    fun ballHitsPaddle() : Boolean {
+        return aabbOverlap(
+            ballX.toFloat(),
+            ballY.toFloat(),
+            ballRenderer.ballSize.toFloat(),
+            ballRenderer.ballSize.toFloat(),
+            paddleX.toFloat(),
+            Constants.PADDLE_MARGIN,
+            paddleRenderer.paddleSize(),
+            paddleRenderer.paddleHeight
+        )
+    }
 
+    /*fun bounceX(vx: Float, vy: Float) = BounceResult(-vx, vy)
+    fun bounceY(vx: Float, vy: Float) = BounceResult(vx, -vy)*/
     private fun update() {
         var velocityX = 0f
 
@@ -159,14 +207,25 @@ class GameController(window: Long, width:Int, height:Int) {
             velocityX += paddleSpeed
         }
 
-        paddleX = (paddleX + velocityX * deltaTime).toInt()
+        if (!isBallReleased && isSpaceKey) {
+            isBallReleased = true
+            ballDY = -(ballSpeedUV * windowHeight)
+            retroSynth.playSquareBeep(freq = 880f, durationMs = 250)
+        }
+
+        if (isBallReleased) {
+            ballX+=(ballDX*deltaTime).roundToInt()
+            ballY+=(ballDY*deltaTime).roundToInt()
+        }
+
+        paddleX = (paddleX + velocityX * deltaTime).roundToInt()
 
         val paddleWidth = paddleRenderer.paddleSize().roundToInt()
 
-        paddleX = clamp(
-            paddleX,
-            frameWidth,
-            windowWidth - frameWidth - paddleWidth
+        // Clamp paddle to window boundaries
+        paddleX = paddleX.coerceIn(
+            frameWidth,                           // left wall
+            windowWidth - frameWidth - paddleWidth // right wall
         )
     }
 
@@ -194,17 +253,102 @@ class GameController(window: Long, width:Int, height:Int) {
         }
     }
 
+    private fun handleCollisions() {
+        val ballY = ballY.toFloat()
+        val ballSize = ballRenderer.ballSize.toFloat()
+        val ballX = ballX.toFloat()
+
+        bricks.forEach {
+            if (it.isActive && ballHitsBrick(
+                    ballX,
+                    ballY,
+                    ballSize,
+                    it.brickX.toFloat(),
+                    it.brickY.toFloat(),
+                    brickWidth.toFloat(),
+                    brickHeight.toFloat())) {
+                ballDY*=-1 // reverse direction
+                retroSynth.playNoiseBurst(durationMs = 170)
+                it.isActive = false
+                score+=200
+                brickCount--
+            }
+        }
+
+        val paddleSize = paddleRenderer.paddleSize()
+        if (ballHitsPaddle()) {
+            val halfSize =  paddleSize / 2f
+            val mid = paddleX + halfSize - 1
+            val quarter = mid - (halfSize - 1) / 2f
+            val third = mid + (halfSize - 1) / 2f
+            val ballMid = ballX - 1 + ballSize / 2f
+
+            if (ballMid == mid) {
+                ballDX = 0f
+            } else if (ballMid < quarter) {
+                ballDX = -abs(ballDY)
+            } else if (ballMid < mid) {
+                ballDX = -abs(0.5f * ballDY)
+            } else if (ballMid < third) {
+                ballDX = abs(0.5f * ballDY)
+            } else {
+                ballDX = abs(ballDY)
+            }
+
+            ballDY*=-1 // reverse direction
+        } else if (ballY < Constants.PADDLE_MARGIN) {
+            initBall()
+            balls--
+            if(balls <= 0) gameOver = true
+        }
+
+        val isHitTopWall = ballHitsTopWall(ballY, ballSize, frameRenderer.startTopY.toFloat())
+        val isHitLeftWall = ballHitsLeftWall(ballX, frameWidth.toFloat())
+        val isHitRightWall = ballHitsRightWall(ballX, ballSize, windowWidth - frameWidth.toFloat())
+        if ( isHitTopWall || isHitRightWall || isHitLeftWall ) {
+            retroSynth.playSquareBeep(freq = 550f, durationMs = 60)
+            // Clamp and reverse
+            ballX.coerceIn(frameWidth.toFloat(), windowWidth - frameWidth - 2 * ballSize) // Strange bug here of stick to wall
+            ballY.coerceIn(0f, frameRenderer.startTopY.toFloat())
+            if (isHitTopWall) {
+                ballDY*=-1
+            } else {
+                ballDX*=-1
+            }
+        }
+
+        if (brickCount <= 0) {
+            isLevelEvent = true
+            paddleRenderer.updatePaddleState( Constants.NORMAL_PADDLE_RATIO)
+            ballSpeedUV += 0.10f
+        } else if (brickCount <= 36) {
+            paddleRenderer.updatePaddleState(Constants.SMALL_PADDLE_RATIO)
+        }
+    }
+
+    private fun initBall() {
+        ballX = (windowWidth / 2f - (windowHeight * Constants.BALL_HEIGHT_RATIO) / 2f).roundToInt()  // center horizontally
+        ballY = (windowHeight * Constants.BALL_START_RATIO).roundToInt()
+        ballDX = 0f
+        ballDY = 0f
+        isBallReleased = !isBallReleased
+        isSpaceKey = false
+    }
+
     private fun render() {
         glClear(GL_COLOR_BUFFER_BIT)
         paddleRenderer.render(paddleX)
         ballRenderer.render(ballX.toFloat(), ballY.toFloat())
-        bricks.forEach { it.renderer.render(it.brickX, it.brickY, it.brickColor)}
+        bricks.forEach {
+            if(it.isActive)
+                it.renderer.render(it.brickX, it.brickY, it.brickColor)
+        }
         hudRenderer.render(score, balls)
         frameRenderer.render()
     }
 
     private fun cleanup() {
-        soundManager.cleanup()
+        retroSynth.cleanup()
         paddleRenderer.cleanup()
         ballRenderer.cleanup()
         bricks.forEach { it.renderer.cleanup() }

@@ -13,11 +13,14 @@ class BallRenderer(
 
     private lateinit var quad: Quad
 
-    private var ballSize = (windowHeight * Constants.BALL_HEIGHT_RATIO).roundToInt()
+    var ballSize = (windowHeight * Constants.BALL_HEIGHT_RATIO).roundToInt()
+        private set
 
     init {
         updateWindowSize(windowWidth, windowHeight)
     }
+
+
 
     fun cleanup() {
         GL30.glDeleteVertexArrays(quad.vao)

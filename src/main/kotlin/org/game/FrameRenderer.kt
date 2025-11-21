@@ -13,6 +13,8 @@ class FrameRenderer(
     private lateinit var top: Quad
     private lateinit var left: Quad
     private lateinit var right: Quad
+    var startTopY: Int = 0
+        private set
 
     private var hudHeight = windowHeight * Constants.HUD_HEIGHT_RATIO
 
@@ -93,6 +95,7 @@ class FrameRenderer(
     private fun buildGeometry() {
         val topHeight = (windowHeight * Constants.TOP_FRAME_RATIO).roundToInt()
         val sideWidth = (windowWidth * Constants.SIDE_FRAME_RATIO).roundToInt()
+        startTopY =(windowHeight - hudHeight - topHeight).roundToInt()
 
         top = buildQuad(0f, windowHeight - hudHeight - topHeight, windowWidth.toFloat(), topHeight + 0.0f)
         left = buildQuad(0f, 0f, sideWidth + 0.0f, windowHeight - hudHeight - topHeight)

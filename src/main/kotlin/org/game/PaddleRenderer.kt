@@ -7,8 +7,11 @@ class PaddleRenderer(private val shader: PaddleShader, private var windowWidth: 
     private data class Quad(val vao: Int, val vbo: Int, var vertexCount: Int)
     private lateinit var paddle: Quad
 
-    private var paddleHeight = windowHeight * Constants.PADDLE_HEIGHT_RATIO
-    private var paddleWidth = windowWidth * Constants.NORMAL_PADDLE_RATIO
+    var paddleHeight = windowHeight * Constants.PADDLE_HEIGHT_RATIO
+        private set
+    var paddleState = Constants.NORMAL_PADDLE_RATIO
+        private set
+    private var paddleWidth = windowWidth * paddleState
 
     init {
         buildGeometry() // Initial paddle position at roughly center
@@ -20,6 +23,13 @@ class PaddleRenderer(private val shader: PaddleShader, private var windowWidth: 
             GL30.glDeleteBuffers(quad.vbo)
         }
         shader.cleanup()
+    }
+
+    fun updatePaddleState(newPaddleState: Float) {
+        paddleState = newPaddleState
+        paddleWidth = windowWidth * newPaddleState
+        shader.rebuild()
+        buildGeometry()
     }
 
     fun paddleSize(): Float {
