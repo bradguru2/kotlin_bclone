@@ -18,7 +18,7 @@ class Game {
     fun start() {
         initWindow()
         initOpenGL()
-        controller = GameController(window, width, height);
+        controller = GameController(window, width, height)
         controller.execute()
         cleanup()
     }
