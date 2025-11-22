@@ -190,8 +190,6 @@ class GameController(window: Long, width:Int, height:Int) {
         )
     }
 
-    /*fun bounceX(vx: Float, vy: Float) = BounceResult(-vx, vy)
-    fun bounceY(vx: Float, vy: Float) = BounceResult(vx, -vy)*/
     private fun update() {
         var velocityX = 0f
 
@@ -306,7 +304,7 @@ class GameController(window: Long, width:Int, height:Int) {
         if ( isHitTopWall || isHitRightWall || isHitLeftWall ) {
             retroSynth.playSquareBeep(freq = 550f, durationMs = 60)
             // Clamp and reverse
-            ballX.coerceIn(frameWidth.toFloat(), windowWidth - frameWidth - ballSize) // Strange bug here of stick to wall
+            ballX.coerceIn(frameWidth.toFloat(), windowWidth - frameWidth - ballSize) 
             ballY.coerceIn(0f, frameRenderer.startTopY.toFloat())
             if (isHitTopWall) {
                 if (ballDY >= 0)
