@@ -16,8 +16,6 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class GameController(window: Long, width:Int, height:Int) {
-    // Let's react to collisions
-    data class BounceResult(val vx: Float, val vy: Float)
     // Track bricks
     data class Brick (
         var brickX: Int,
@@ -192,8 +190,6 @@ class GameController(window: Long, width:Int, height:Int) {
         )
     }
 
-    /*fun bounceX(vx: Float, vy: Float) = BounceResult(-vx, vy)
-    fun bounceY(vx: Float, vy: Float) = BounceResult(vx, -vy)*/
     private fun update() {
         var velocityX = 0f
 
@@ -238,7 +234,7 @@ class GameController(window: Long, width:Int, height:Int) {
        var brickY = (Constants.BRICK_START_RATIO * windowHeight).roundToInt()
         for (i in 0 ..< Constants.BRICK_ROW_COUNT) {
             var brickX = frameWidth + margin
-            for (j in 0 ..<Constants.BRICK_COLUMN_COUNT) {
+            (0 ..<Constants.BRICK_COLUMN_COUNT).forEach { _ ->
                 val brick = Brick(
                     brickX,
                     brickY,
@@ -308,12 +304,16 @@ class GameController(window: Long, width:Int, height:Int) {
         if ( isHitTopWall || isHitRightWall || isHitLeftWall ) {
             retroSynth.playSquareBeep(freq = 550f, durationMs = 60)
             // Clamp and reverse
-            ballX.coerceIn(frameWidth.toFloat(), windowWidth - frameWidth - 2 * ballSize) // Strange bug here of stick to wall
+            ballX.coerceIn(frameWidth.toFloat(), windowWidth - frameWidth - ballSize) 
             ballY.coerceIn(0f, frameRenderer.startTopY.toFloat())
             if (isHitTopWall) {
-                ballDY*=-1
+                if (ballDY >= 0)
+                    ballDY*=-1
             } else {
-                ballDX*=-1
+                if (isHitRightWall && ballDX >= 0)
+                    ballDX*=-1
+                if (isHitLeftWall && ballDX <= 0)
+                    ballDX*=-1
             }
         }
 
