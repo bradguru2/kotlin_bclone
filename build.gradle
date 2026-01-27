@@ -1,8 +1,10 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '2.2.10'
+    id 'org.jetbrains.kotlin.jvm' version '2.3.0'
+    id 'application'
+    id("com.gradleup.shadow") version "9.3.1"
 }
 
-group = 'org.example'
+group = 'org.game'
 version = '1.0-SNAPSHOT'
 
 repositories {
@@ -16,7 +18,7 @@ dependencies {
     implementation "org.lwjgl:lwjgl-glfw"
     implementation "org.lwjgl:lwjgl-opengl"
     implementation "org.lwjgl:lwjgl-stb"
-    implementation 'org.joml:joml:1.10.6'
+    implementation 'org.joml:joml:1.10.8'
     implementation "org.lwjgl.lwjgl:lwjgl_util:2.9.3"
     implementation "org.lwjgl:lwjgl-openal"
 
@@ -25,6 +27,16 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-opengl::natives-linux"
     runtimeOnly "org.lwjgl:lwjgl-stb::natives-linux"
     runtimeOnly "org.lwjgl:lwjgl-openal::natives-linux"
+    runtimeOnly "org.lwjgl:lwjgl::natives-windows"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-windows"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::natives-windows"
+    runtimeOnly "org.lwjgl:lwjgl-stb::natives-windows"
+    runtimeOnly "org.lwjgl:lwjgl-openal::natives-windows"
+    runtimeOnly "org.lwjgl:lwjgl::natives-macos"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-macos"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::natives-macos"
+    runtimeOnly "org.lwjgl:lwjgl-stb::natives-macos"
+    runtimeOnly "org.lwjgl:lwjgl-openal::natives-macos"
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
 }
 
@@ -33,4 +45,23 @@ test {
 }
 kotlin {
     jvmToolchain(17)
+}
+
+application {
+    mainClass = 'org.game.GameKt' // adjust to your main
+    if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+        applicationDefaultJvmArgs = ["-XstartOnFirstThread"]
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': application.mainClass
+    }
+    // Optionally:
+    // duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+tasks.shadowJar {
+    manifest { attributes["Main-Class"] = application.mainClass.get() }
 }
