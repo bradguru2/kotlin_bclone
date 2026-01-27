@@ -3,7 +3,7 @@ name: Gradle Build on PR
 on:
   pull_request:
     branches:
-      - main # Specify the target branch(es) for the PRs
+      - master # Specify the target branch(es) for the PRs
 
 jobs:
   build:
